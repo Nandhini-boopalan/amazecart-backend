@@ -5,17 +5,30 @@ const APIFeatures=require('../utils/api features')
 
 //get product-  /api/v1/product
 exports.getproducts = async(req, res, next) => {
-    const resPerPage=2
-    const apiFeatures = new APIFeatures(Product.find(), req.query)
-    apiFeatures.search().filter().paginate(resPerPage)
-const products = await apiFeatures.query; // Accessing apiFeatures.query, not APIFeatures.query
+    const resPerPage = 3;
+    
+    
+    let buildQuery=()=>{
+        return new APIFeatures(Product.find(), req.query).search().filter()
+    }
 
+    const filteredProductsCount=await buildQuery().query.countDocuments({})
+    const totalProductsCount = await Product.countDocuments({});
+    let productsCount=totalProductsCount
+    if(filteredProductsCount !== totalProductsCount){
+        productsCount=filteredProductsCount
+    }
+
+    const products = await buildQuery().paginate(resPerPage).query
     res.status(200).json({
         success: true,
-        count:products.length,
+        count: totalProductsCount,
+        resPerPage,
         products
     });
 };
+
+
 
 // Create product - /api/v1/product/new
 exports.newProduct = catchAsyncError(async (req, res, next) => {
@@ -42,20 +55,22 @@ exports.newProduct = catchAsyncError(async (req, res, next) => {
 });
 
 
-// get single product- 
-exports.getSingleProduct=async(req,res,next)=>{
-    const product=await Product.findById(req.params.id)
+// get single product- api/v1/product/:id
+exports.getSingleProduct = async (req, res, next) => {
+    const product = await Product.findById(req.params.id);
 
-    if(!product){
-        return next(new ErrorHandler('product not found',400))
-        
+    if (!product) {
+        return next(new ErrorHandler('Product not found', 400));
     }
-    res.status(201).json({
-        success:true,
-        product
-    })
+        
+    await new Promise(resolve => setTimeout(resolve, 3000));
 
-}
+    res.status(200).json({
+        success: true,
+        product
+    });
+};
+
 
 //update product- /api/v1/product/:id
 exports.updateProduct = async (req, res, next) => {

@@ -7,7 +7,11 @@ const sendToken=require('../utils/jwt')
 
 //Register User - /api/v1/register
 exports.registerUser = catchAsyncError(async (req, res, next) => {
-    const { name, email, password, avatar } = req.body;
+    const { name, email, password} = req.body;
+    let avatar;
+    if(req.file){
+     avatar=`${process.env.BACKEND_URL}/uploads/user/${req.file.originalname}`
+    }
     try {
         const user = await User.create({
             name,
@@ -78,7 +82,7 @@ await user.save({ validateBeforeSave: false }); // Save the token to the user do
 
 
 //create reset url
-const reseturl=`${req.protocol}://${req.get('host')}/api/v1/password/reset/${resetToken}`
+const reseturl=`${process.env.FRONTEND_URL}/password/reset/${resetToken}`
 const message = `Your password reset URL is as follows:\n\n${reseturl}. If you did not request this email, please ignore it.`;
 
 
@@ -178,10 +182,17 @@ exports.changePassword=catchAsyncError(async(req,res,next)=>{
 
 //update profile-/api/v1/update
 exports.updateProfile=catchAsyncError(async(req,res,next)=>{
-    const newUserData={
+    let newUserData={
         name:req.body.name,
         email:req.body.email
     }
+
+    let avatar;
+    if(req.file){
+     avatar=`${process.env.BACKEND_URL}/uploads/user/${req.file.originalname}`
+     newUserData={...newUserData,avatar}
+    }
+
     const user=await User.findByIdAndUpdate(req.user.id,newUserData,{
         new:true,
         runValidators:true,
